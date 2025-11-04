@@ -110,6 +110,59 @@ organization.
 
 Example: `list-shared-mailbox-messages` with `user-id` set to `shared-mailbox@company.com`
 
+## Email HTML to Text Conversion
+
+Email messages often contain HTML formatting that can consume unnecessary tokens when processed by LLMs. This server provides automatic HTML-to-text conversion with a hybrid approach:
+
+### Automatic Conversion
+
+By default, **all HTML email content is automatically converted to plain text** for optimal LLM consumption. This happens transparently - no configuration needed.
+
+The conversion:
+- Removes HTML tags and formatting
+- Preserves text structure (paragraphs, line breaks)
+- Converts tables to readable text format
+- Removes images and styles
+- Keeps link text (hides URLs)
+
+### How It Works
+
+The server uses a **hybrid approach** for maximum reliability:
+
+1. **Primary:** Requests plain text from Microsoft Graph API using `Prefer: outlook.body-content-type="text"` header
+2. **Fallback:** If HTML is still received, converts it client-side using the `html-to-text` library
+
+### Control Conversion Behavior
+
+Use the `preferTextContent` parameter on mail endpoints to control conversion:
+
+```
+# Get email with automatic HTML→text conversion (default behavior)
+get-mail-message message-id: "AAMkAGI2..."
+
+# Explicitly request text conversion
+get-mail-message message-id: "AAMkAGI2..." preferTextContent: true
+
+# Disable conversion to get original HTML
+get-mail-message message-id: "AAMkAGI2..." preferTextContent: false
+```
+
+### Supported Endpoints
+
+The `preferTextContent` parameter is available on:
+- `list-mail-messages`
+- `get-mail-message`
+- `list-mail-folder-messages`
+- `list-shared-mailbox-messages`
+- `get-shared-mailbox-message`
+
+### Benefits
+
+- **Reduced token usage:** Plain text is typically 50-70% smaller than HTML
+- **Better LLM comprehension:** Clean text without markup noise
+- **Faster processing:** Less data to transmit and parse
+- **Automatic:** Works without user intervention
+
 ## Planner Task Management
 
 When updating or deleting Planner tasks, the Microsoft Graph API requires an `If-Match` header with the task's ETag value. This ensures you're updating the most recent version of the task.
