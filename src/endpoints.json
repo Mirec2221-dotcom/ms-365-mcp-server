@@ -367,6 +367,12 @@
     "scopes": ["Tasks.ReadWrite"]
   },
   {
+    "pathPattern": "/planner/tasks/{plannerTask-id}",
+    "method": "delete",
+    "toolName": "delete-planner-task",
+    "scopes": ["Tasks.ReadWrite"]
+  },
+  {
     "pathPattern": "/me/contacts",
     "method": "get",
     "toolName": "list-outlook-contacts",

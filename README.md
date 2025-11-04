@@ -45,8 +45,8 @@ create-onenote-page</sub>
 **To Do Tasks**  
 <sub>list-todo-task-lists, list-todo-tasks, get-todo-task, create-todo-task, update-todo-task, delete-todo-task</sub>
 
-**Planner**  
-<sub>list-planner-tasks, get-planner-plan, list-plan-tasks, get-planner-task, create-planner-task</sub>
+**Planner**
+<sub>list-planner-tasks, get-planner-plan, list-plan-tasks, get-planner-task, create-planner-task, update-planner-task, update-planner-task-details, delete-planner-task</sub>
 
 **Contacts**  
 <sub>list-outlook-contacts, get-outlook-contact, create-outlook-contact, update-outlook-contact,
@@ -109,6 +109,49 @@ To access shared mailboxes, you need:
 organization.
 
 Example: `list-shared-mailbox-messages` with `user-id` set to `shared-mailbox@company.com`
+
+## Planner Task Management
+
+When updating or deleting Planner tasks, the Microsoft Graph API requires an `If-Match` header with the task's ETag value. This ensures you're updating the most recent version of the task.
+
+### How to Update/Assign Planner Tasks:
+
+1. **Get the task with ETag**:
+   ```
+   get-planner-task with includeHeaders=true
+   ```
+   This returns the task data with `_etag` in the `_meta` field.
+
+2. **Update the task with If-Match header**:
+   ```
+   update-planner-task with If-Match="{etag-value}"
+   ```
+
+### Assigning Tasks to Users:
+
+To assign a task to a user, update the `assignments` property:
+
+```json
+{
+  "assignments": {
+    "user-id-guid": {
+      "@odata.type": "#microsoft.graph.plannerAssignment",
+      "orderHint": " !"
+    }
+  }
+}
+```
+
+**To remove an assignment**, set the user ID to `null`:
+```json
+{
+  "assignments": {
+    "user-id-guid": null
+  }
+}
+```
+
+**Finding user IDs**: Use the `list-users` tool (requires `--org-mode`) or `get-current-user` to get user GUIDs.
 
 ## Quick Start Example
 

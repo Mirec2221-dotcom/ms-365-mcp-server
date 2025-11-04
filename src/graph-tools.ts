@@ -137,6 +137,16 @@ export function registerGraphTools(
       .describe('Exclude the full response body and only return success or failure indication')
       .optional();
 
+    // Add If-Match header support for Planner API endpoints (required for PATCH/DELETE)
+    if (tool.path.includes('/planner/') && ['PATCH', 'DELETE'].includes(tool.method.toUpperCase())) {
+      paramSchema['If-Match'] = z
+        .string()
+        .describe(
+          'ETag value from the task object (required for Planner updates). Get this by calling the corresponding GET endpoint with includeHeaders=true and using the _etag value from _meta.'
+        )
+        .optional();
+    }
+
     server.tool(
       tool.alias,
       tool.description || `Execute ${tool.method.toUpperCase()} request to ${tool.path}`,
@@ -170,6 +180,12 @@ export function registerGraphTools(
 
             // Skip excludeResponse control parameter - it's not part of the Microsoft Graph API
             if (paramName === 'excludeResponse') {
+              continue;
+            }
+
+            // Handle If-Match header for Planner API
+            if (paramName === 'If-Match') {
+              headers['If-Match'] = paramValue as string;
               continue;
             }
 
