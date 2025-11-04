@@ -147,6 +147,19 @@ export function registerGraphTools(
         .optional();
     }
 
+    // Add preferTextContent parameter for mail/message endpoints (HTML to text conversion)
+    if (
+      tool.method.toUpperCase() === 'GET' &&
+      (tool.path.includes('/messages') || tool.path.includes('/mailFolders'))
+    ) {
+      paramSchema['preferTextContent'] = z
+        .boolean()
+        .describe(
+          'Request email body in plain text format instead of HTML. Uses Microsoft Graph Prefer header for server-side conversion, with automatic fallback to client-side HTML-to-text conversion for better LLM consumption. Reduces token usage by removing HTML tags.'
+        )
+        .optional();
+    }
+
     server.tool(
       tool.alias,
       tool.description || `Execute ${tool.method.toUpperCase()} request to ${tool.path}`,
@@ -180,6 +193,15 @@ export function registerGraphTools(
 
             // Skip excludeResponse control parameter - it's not part of the Microsoft Graph API
             if (paramName === 'excludeResponse') {
+              continue;
+            }
+
+            // Handle preferTextContent parameter - add Prefer header for text content
+            if (paramName === 'preferTextContent') {
+              if (paramValue === true) {
+                headers['Prefer'] = 'outlook.body-content-type="text"';
+                logger.info('Added Prefer header for text content');
+              }
               continue;
             }
 

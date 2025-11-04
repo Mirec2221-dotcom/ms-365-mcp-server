@@ -1,6 +1,7 @@
 import logger from './logger.js';
 import AuthManager from './auth.js';
 import { refreshAccessToken } from './lib/microsoft-auth.js';
+import { convert } from 'html-to-text';
 
 interface GraphRequestOptions {
   headers?: Record<string, string>;
@@ -175,6 +176,76 @@ class GraphClient {
     }
   }
 
+  /**
+   * Converts HTML content to plain text optimized for LLM consumption
+   * @param html HTML string to convert
+   * @returns Plain text string
+   */
+  private convertHtmlToText(html: string): string {
+    try {
+      return convert(html, {
+        wordwrap: 80,
+        preserveNewlines: true,
+        selectors: [
+          // Links: show only text, hide href
+          { selector: 'a', options: { ignoreHref: true } },
+          // Images: skip completely
+          { selector: 'img', format: 'skip' },
+          // Tables: preserve structure
+          { selector: 'table', options: { uppercaseHeadings: false } },
+          // Skip style and script tags
+          { selector: 'style', format: 'skip' },
+          { selector: 'script', format: 'skip' },
+        ],
+      });
+    } catch (error) {
+      logger.warn(`Failed to convert HTML to text: ${error}`);
+      // Fallback: return original HTML if conversion fails
+      return html;
+    }
+  }
+
+  /**
+   * Processes message body objects and converts HTML to text if needed
+   * @param obj Any object that might contain message body
+   */
+  private processMessageBodies(obj: any): void {
+    if (!obj || typeof obj !== 'object') {
+      return;
+    }
+
+    // Handle arrays (like list of messages)
+    if (Array.isArray(obj)) {
+      obj.forEach((item) => this.processMessageBodies(item));
+      return;
+    }
+
+    // Check if this object has a body property with contentType
+    if (obj.body && typeof obj.body === 'object') {
+      if (obj.body.contentType === 'html' && obj.body.content) {
+        logger.info('Converting HTML email body to text');
+        obj.body.content = this.convertHtmlToText(obj.body.content);
+        obj.body.contentType = 'text';
+      }
+    }
+
+    // Check for uniqueBody (used in message threads)
+    if (obj.uniqueBody && typeof obj.uniqueBody === 'object') {
+      if (obj.uniqueBody.contentType === 'html' && obj.uniqueBody.content) {
+        logger.info('Converting HTML uniqueBody to text');
+        obj.uniqueBody.content = this.convertHtmlToText(obj.uniqueBody.content);
+        obj.uniqueBody.contentType = 'text';
+      }
+    }
+
+    // Recursively process nested objects
+    Object.keys(obj).forEach((key) => {
+      if (typeof obj[key] === 'object') {
+        this.processMessageBodies(obj[key]);
+      }
+    });
+  }
+
   formatJsonResponse(data: unknown, rawResponse = false, excludeResponse = false): McpResponse {
     // If excludeResponse is true, only return success indication
     if (excludeResponse) {
@@ -213,6 +284,9 @@ class GraphClient {
         };
       }
 
+      // Process message bodies to convert HTML to text
+      this.processMessageBodies(responseData.data);
+
       // Remove OData properties
       const removeODataProps = (obj: Record<string, unknown>): void => {
         if (typeof obj === 'object' && obj !== null) {
@@ -246,6 +320,9 @@ class GraphClient {
         content: [{ type: 'text', text: JSON.stringify({ success: true }) }],
       };
     }
+
+    // Process message bodies to convert HTML to text
+    this.processMessageBodies(data);
 
     // Remove OData properties
     const removeODataProps = (obj: Record<string, unknown>): void => {
