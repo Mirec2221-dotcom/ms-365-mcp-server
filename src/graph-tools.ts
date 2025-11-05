@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { executeM365Code } from './code-execution.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -550,6 +551,73 @@ export function registerGraphTools(
       return {
         content: [content],
       };
+    }
+  );
+
+  // Register code execution tool for advanced data filtering and processing
+  server.tool(
+    'execute-m365-code',
+    'Execute JavaScript code in a sandboxed environment with access to Microsoft 365 APIs. Use this for advanced data filtering, aggregation, and multi-step operations. The code has access to an `m365` object with methods like m365.mail.list(), m365.calendar.list(), etc. This significantly reduces token usage by processing data locally before returning results.',
+    {
+      code: z
+        .string()
+        .describe(
+          'JavaScript code to execute. The code should return a value. Example: const messages = await m365.mail.list({ filter: "isRead eq false" }); return messages.filter(m => m.importance === "high").map(m => ({ from: m.from.emailAddress.address, subject: m.subject }));'
+        ),
+      timeout: z
+        .number()
+        .optional()
+        .describe('Execution timeout in milliseconds (default: 30000, max: 60000)'),
+    },
+    {
+      title: 'execute-m365-code',
+      readOnlyHint: false,
+    },
+    async (params) => {
+      const { code, timeout = 30000 } = params as { code: string; timeout?: number };
+
+      // Validate timeout
+      const maxTimeout = 60000; // 60 seconds max
+      const actualTimeout = Math.min(timeout, maxTimeout);
+
+      try {
+        logger.info(`Executing M365 code (timeout: ${actualTimeout}ms)`);
+
+        const result = await executeM365Code(code, graphClient, { timeout: actualTimeout });
+
+        const content: TextContent = {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: true,
+              result,
+              executedAt: new Date().toISOString(),
+            },
+            null,
+            2
+          ),
+        };
+
+        return {
+          content: [content],
+        };
+      } catch (error) {
+        logger.error(`Code execution error: ${(error as Error).message}`);
+
+        const content: TextContent = {
+          type: 'text',
+          text: JSON.stringify({
+            success: false,
+            error: (error as Error).message,
+            stack: (error as Error).stack,
+          }),
+        };
+
+        return {
+          content: [content],
+          isError: true,
+        };
+      }
     }
   );
 }
