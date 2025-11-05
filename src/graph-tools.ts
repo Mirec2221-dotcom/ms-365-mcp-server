@@ -17,6 +17,7 @@ interface EndpointConfig {
   scopes?: string[];
   workScopes?: string[];
   returnDownloadUrl?: boolean;
+  category?: string;
 }
 
 const endpointsData = JSON.parse(
@@ -439,4 +440,116 @@ export function registerGraphTools(
       }
     );
   }
+
+  // Register meta-tools for progressive tool discovery
+  server.tool(
+    'list-m365-categories',
+    'Get a list of all available Microsoft 365 tool categories with counts. Use this to discover which categories of tools are available before loading specific tools.',
+    {},
+    {
+      title: 'list-m365-categories',
+      readOnlyHint: true,
+    },
+    async () => {
+      const categoryCounts: Record<string, number> = {};
+      const categoryDescriptions: Record<string, string> = {
+        mail: 'Email and message operations (Outlook)',
+        calendar: 'Calendar and event management',
+        contacts: 'Contact management',
+        teams: 'Microsoft Teams operations',
+        chats: 'Teams chat operations',
+        files: 'OneDrive and file operations',
+        sharepoint: 'SharePoint sites and lists',
+        excel: 'Excel workbook operations',
+        planner: 'Microsoft Planner task management',
+        todo: 'Microsoft To Do task management',
+        onenote: 'OneNote notebook operations',
+        search: 'Search operations across Microsoft 365',
+        users: 'User information and management',
+        other: 'Miscellaneous operations',
+      };
+
+      for (const endpoint of endpointsData) {
+        const category = endpoint.category || 'other';
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      }
+
+      const categories = Object.entries(categoryCounts)
+        .map(([name, count]) => ({
+          name,
+          description: categoryDescriptions[name] || 'Other operations',
+          toolCount: count,
+        }))
+        .sort((a, b) => b.toolCount - a.toolCount);
+
+      const result = {
+        totalCategories: categories.length,
+        totalTools: endpointsData.length,
+        categories,
+      };
+
+      const content: TextContent = {
+        type: 'text',
+        text: JSON.stringify(result, null, 2),
+      };
+
+      return {
+        content: [content],
+      };
+    }
+  );
+
+  server.tool(
+    'list-category-tools',
+    'Get a list of all tools in a specific Microsoft 365 category. Use this after discovering available categories to see what operations are available in each category.',
+    {
+      category: z.string().describe('The category name (e.g., "mail", "calendar", "teams")'),
+    },
+    {
+      title: 'list-category-tools',
+      readOnlyHint: true,
+    },
+    async (params) => {
+      const { category } = params as { category: string };
+      const categoryTools = endpointsData
+        .filter((e) => e.category === category)
+        .map((e) => {
+          const apiTool = api.endpoints.find((t) => t.alias === e.toolName);
+          return {
+            name: e.toolName,
+            description: apiTool?.description || `${e.method.toUpperCase()} ${e.pathPattern}`,
+            method: e.method.toUpperCase(),
+            readOnly: e.method.toUpperCase() === 'GET',
+          };
+        });
+
+      if (categoryTools.length === 0) {
+        const content: TextContent = {
+          type: 'text',
+          text: JSON.stringify({
+            error: `Category "${category}" not found. Use list-m365-categories to see available categories.`,
+          }),
+        };
+        return {
+          content: [content],
+          isError: true,
+        };
+      }
+
+      const result = {
+        category,
+        toolCount: categoryTools.length,
+        tools: categoryTools,
+      };
+
+      const content: TextContent = {
+        type: 'text',
+        text: JSON.stringify(result, null, 2),
+      };
+
+      return {
+        content: [content],
+      };
+    }
+  );
 }
