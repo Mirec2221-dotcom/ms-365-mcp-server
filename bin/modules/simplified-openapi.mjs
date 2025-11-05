@@ -47,6 +47,7 @@ export function createAndSaveSimplifiedOpenAPI(endpointsFile, openapiFile, opena
 
   if (openApiSpec.components && openApiSpec.components.schemas) {
     removeODataTypeRecursively(openApiSpec.components.schemas);
+    fixDynamicObjectSchemas(openApiSpec.components.schemas);
     flattenComplexSchemasRecursively(openApiSpec.components.schemas);
   }
 
@@ -60,6 +61,35 @@ export function createAndSaveSimplifiedOpenAPI(endpointsFile, openapiFile, opena
   pruneUnusedSchemas(openApiSpec, usedSchemas);
 
   fs.writeFileSync(openapiTrimmedFile, yaml.dump(openApiSpec));
+}
+
+function fixDynamicObjectSchemas(schemas) {
+  // Fix plannerAssignments - this should accept dynamic user IDs as keys
+  if (schemas['microsoft.graph.plannerAssignments']) {
+    console.log('🔧 Fixing microsoft.graph.plannerAssignments to support dynamic user ID keys');
+    schemas['microsoft.graph.plannerAssignments'].additionalProperties = {
+      type: 'object',
+      properties: {
+        '@odata.type': {
+          type: 'string',
+          default: '#microsoft.graph.plannerAssignment'
+        },
+        orderHint: {
+          type: 'string',
+          description: 'Hint used to order assignees in the task'
+        }
+      }
+    };
+  }
+
+  // Fix plannerAppliedCategories - similar pattern for category assignments
+  if (schemas['microsoft.graph.plannerAppliedCategories']) {
+    console.log('🔧 Fixing microsoft.graph.plannerAppliedCategories to support dynamic category keys');
+    schemas['microsoft.graph.plannerAppliedCategories'].additionalProperties = {
+      type: 'boolean',
+      description: 'Whether the category is applied to the task'
+    };
+  }
 }
 
 function removeODataTypeRecursively(obj) {

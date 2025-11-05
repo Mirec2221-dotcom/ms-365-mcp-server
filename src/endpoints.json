@@ -331,6 +331,24 @@
     "scopes": ["Tasks.Read"]
   },
   {
+    "pathPattern": "/me/planner/plans",
+    "method": "get",
+    "toolName": "list-user-planner-plans",
+    "scopes": ["Tasks.Read"]
+  },
+  {
+    "pathPattern": "/users/{user-id}/planner/plans",
+    "method": "get",
+    "toolName": "list-specific-user-planner-plans",
+    "scopes": ["Tasks.Read"]
+  },
+  {
+    "pathPattern": "/groups/{group-id}/planner/plans",
+    "method": "get",
+    "toolName": "list-group-planner-plans",
+    "scopes": ["Tasks.Read"]
+  },
+  {
     "pathPattern": "/planner/plans/{plannerPlan-id}",
     "method": "get",
     "toolName": "get-planner-plan",
