@@ -1,0 +1,13 @@
+{
+  "name": "getTodaysTodoTasks",
+  "description": "Get all To Do tasks due today across all lists",
+  "category": "todo",
+  "code": "\n      const today = new Date();\n      today.setHours(0, 0, 0, 0);\n      const todayISO = today.toISOString().split('T')[0];\n\n      const lists = await m365.todo.listTaskLists();\n      const todaysTasks = [];\n\n      for (const list of lists.value) {\n        const tasks = await m365.todo.listTasks({ listId: list.id });\n\n        for (const task of tasks.value) {\n          if (task.dueDateTime?.dateTime) {\n            const dueDate = task.dueDateTime.dateTime.split('T')[0];\n            if (dueDate === todayISO && task.status !== 'completed') {\n              todaysTasks.push({\n                listName: list.displayName,\n                taskTitle: task.title,\n                importance: task.importance,\n                isReminderOn: task.isReminderOn,\n                status: task.status\n              });\n            }\n          }\n        }\n      }\n\n      return {\n        date: todayISO,\n        count: todaysTasks.length,\n        tasks: todaysTasks.sort((a, b) => {\n          const importanceOrder = { high: 0, normal: 1, low: 2 };\n          return importanceOrder[a.importance] - importanceOrder[b.importance];\n        })\n      };\n    ",
+  "tags": ["todo", "tasks", "daily", "due"],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "7c0c9830-1d6c-41c5-9b02-c131f2746d3b",
+  "createdAt": "2025-11-05T09:49:31.875Z",
+  "usageCount": 0,
+  "updatedAt": "2025-11-05T09:49:31.875Z"
+}

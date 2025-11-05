@@ -48,10 +48,11 @@ describe('Tool Filtering', () => {
     toolSpy = vi.spyOn(server, 'tool').mockImplementation(() => {});
   });
 
-  it('should register all tools when no filter is provided', () => {
-    registerGraphTools(server, graphClient, false);
+  it('should register all tools when no filter is provided', async () => {
+    await registerGraphTools(server, graphClient, false);
 
-    expect(toolSpy).toHaveBeenCalledTimes(5);
+    // 5 endpoints + 10 base tools (2 category + 1 code + 7 skill) = 15 total
+    expect(toolSpy).toHaveBeenCalledTimes(15);
     expect(toolSpy).toHaveBeenCalledWith(
       'list-mail-messages',
       expect.any(String),
@@ -89,10 +90,11 @@ describe('Tool Filtering', () => {
     );
   });
 
-  it('should filter tools by regex pattern - mail only', () => {
-    registerGraphTools(server, graphClient, false, 'mail');
+  it('should filter tools by regex pattern - mail only', async () => {
+    await registerGraphTools(server, graphClient, false, 'mail');
 
-    expect(toolSpy).toHaveBeenCalledTimes(2);
+    // 2 mail endpoints + 10 base tools = 12 total
+    expect(toolSpy).toHaveBeenCalledTimes(12);
     expect(toolSpy).toHaveBeenCalledWith(
       'list-mail-messages',
       expect.any(String),
@@ -109,10 +111,11 @@ describe('Tool Filtering', () => {
     );
   });
 
-  it('should filter tools by regex pattern - calendar or excel', () => {
-    registerGraphTools(server, graphClient, false, 'calendar|excel');
+  it('should filter tools by regex pattern - calendar or excel', async () => {
+    await registerGraphTools(server, graphClient, false, 'calendar|excel');
 
-    expect(toolSpy).toHaveBeenCalledTimes(2);
+    // 2 endpoints (calendar + excel) + 10 base tools = 12 total
+    expect(toolSpy).toHaveBeenCalledTimes(12);
     expect(toolSpy).toHaveBeenCalledWith(
       'list-calendar-events',
       expect.any(String),
@@ -129,16 +132,18 @@ describe('Tool Filtering', () => {
     );
   });
 
-  it('should handle invalid regex patterns gracefully', () => {
-    registerGraphTools(server, graphClient, false, '[invalid regex');
+  it('should handle invalid regex patterns gracefully', async () => {
+    await registerGraphTools(server, graphClient, false, '[invalid regex');
 
-    expect(toolSpy).toHaveBeenCalledTimes(5);
+    // Falls back to all: 5 endpoints + 10 base tools = 15 total
+    expect(toolSpy).toHaveBeenCalledTimes(15);
   });
 
-  it('should combine read-only and filtering correctly', () => {
-    registerGraphTools(server, graphClient, true, 'mail');
+  it('should combine read-only and filtering correctly', async () => {
+    await registerGraphTools(server, graphClient, true, 'mail');
 
-    expect(toolSpy).toHaveBeenCalledTimes(1);
+    // 1 mail GET endpoint + 10 base tools = 11 total
+    expect(toolSpy).toHaveBeenCalledTimes(11);
     expect(toolSpy).toHaveBeenCalledWith(
       'list-mail-messages',
       expect.any(String),
@@ -148,9 +153,10 @@ describe('Tool Filtering', () => {
     );
   });
 
-  it('should register no tools when pattern matches nothing', () => {
-    registerGraphTools(server, graphClient, false, 'nonexistent');
+  it('should register no tools when pattern matches nothing', async () => {
+    await registerGraphTools(server, graphClient, false, 'nonexistent');
 
-    expect(toolSpy).toHaveBeenCalledTimes(0);
+    // 0 endpoints match, but 10 base tools still registered
+    expect(toolSpy).toHaveBeenCalledTimes(10);
   });
 });

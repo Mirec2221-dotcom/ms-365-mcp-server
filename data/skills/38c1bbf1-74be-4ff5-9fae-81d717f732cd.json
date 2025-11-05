@@ -1,0 +1,18 @@
+{
+  "name": "summarizeTodaysEmails",
+  "description": "Get a comprehensive summary of today's emails including count, unread count, urgent emails, and top senders",
+  "category": "mail",
+  "code": "\n      const today = new Date();\n      today.setHours(0, 0, 0, 0);\n      const todayISO = today.toISOString();\n\n      const tomorrow = new Date(today);\n      tomorrow.setDate(tomorrow.getDate() + 1);\n      const tomorrowISO = tomorrow.toISOString();\n\n      const messages = await m365.mail.list({\n        filter: `receivedDateTime ge ${todayISO} and receivedDateTime lt ${tomorrowISO}`,\n        select: 'from,subject,importance,isRead,hasAttachments',\n        top: 100\n      });\n\n      const bySender = {};\n      let unreadCount = 0;\n      let urgentCount = 0;\n\n      for (const msg of messages.value) {\n        const sender = msg.from.emailAddress.address;\n        if (!bySender[sender]) {\n          bySender[sender] = { count: 0, unread: 0, urgent: 0 };\n        }\n        bySender[sender].count++;\n        if (!msg.isRead) {\n          bySender[sender].unread++;\n          unreadCount++;\n        }\n        if (msg.importance === 'high') {\n          bySender[sender].urgent++;\n          urgentCount++;\n        }\n      }\n\n      const topSenders = Object.entries(bySender)\n        .sort((a, b) => b[1].count - a[1].count)\n        .slice(0, 5)\n        .map(([email, stats]) => ({ email, ...stats }));\n\n      return {\n        date: today.toISOString().split('T')[0],\n        total: messages.value.length,\n        unread: unreadCount,\n        urgent: urgentCount,\n        topSenders\n      };\n    ",
+  "tags": [
+    "email",
+    "summary",
+    "daily",
+    "report"
+  ],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "38c1bbf1-74be-4ff5-9fae-81d717f732cd",
+  "createdAt": "2025-11-05T09:49:31.861Z",
+  "usageCount": 1,
+  "updatedAt": "2025-11-05T10:03:26.032Z"
+}

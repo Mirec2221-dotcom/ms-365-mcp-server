@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { executeM365Code } from './code-execution.js';
+import { registerSkillTools } from './skill-tools.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,13 +80,13 @@ interface CallToolResult {
   [key: string]: unknown;
 }
 
-export function registerGraphTools(
+export async function registerGraphTools(
   server: McpServer,
   graphClient: GraphClient,
   readOnly: boolean = false,
   enabledToolsPattern?: string,
   orgMode: boolean = false
-): void {
+): Promise<void> {
   let enabledToolsRegex: RegExp | undefined;
   if (enabledToolsPattern) {
     try {
@@ -140,7 +141,10 @@ export function registerGraphTools(
       .optional();
 
     // Add If-Match header support for Planner API endpoints (required for PATCH/DELETE)
-    if (tool.path.includes('/planner/') && ['PATCH', 'DELETE'].includes(tool.method.toUpperCase())) {
+    if (
+      tool.path.includes('/planner/') &&
+      ['PATCH', 'DELETE'].includes(tool.method.toUpperCase())
+    ) {
       paramSchema['If-Match'] = z
         .string()
         .describe(
@@ -620,4 +624,7 @@ export function registerGraphTools(
       }
     }
   );
+
+  // Register skill management tools
+  await registerSkillTools(server, graphClient);
 }

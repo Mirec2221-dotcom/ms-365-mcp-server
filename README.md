@@ -119,6 +119,7 @@ Email messages often contain HTML formatting that can consume unnecessary tokens
 By default, **all HTML email content is automatically converted to plain text** for optimal LLM consumption. This happens transparently - no configuration needed.
 
 The conversion:
+
 - Removes HTML tags and formatting
 - Preserves text structure (paragraphs, line breaks)
 - Converts tables to readable text format
@@ -150,6 +151,7 @@ get-mail-message message-id: "AAMkAGI2..." preferTextContent: false
 ### Supported Endpoints
 
 The `preferTextContent` parameter is available on:
+
 - `list-mail-messages`
 - `get-mail-message`
 - `list-mail-folder-messages`
@@ -170,9 +172,11 @@ When updating or deleting Planner tasks, the Microsoft Graph API requires an `If
 ### How to Update/Assign Planner Tasks:
 
 1. **Get the task with ETag**:
+
    ```
    get-planner-task with includeHeaders=true
    ```
+
    This returns the task data with `_etag` in the `_meta` field.
 
 2. **Update the task with If-Match header**:
@@ -196,6 +200,7 @@ To assign a task to a user, update the `assignments` property:
 ```
 
 **To remove an assignment**, set the user ID to `null`:
+
 ```json
 {
   "assignments": {

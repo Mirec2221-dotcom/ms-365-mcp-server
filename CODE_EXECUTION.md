@@ -5,6 +5,7 @@
 The MS365 MCP Server now supports code execution in a sandboxed environment, enabling advanced data filtering, aggregation, and multi-step operations. This feature dramatically reduces token usage by processing data locally before returning results to the LLM.
 
 **Key Benefits:**
+
 - 🚀 **98.7% token reduction** (as measured by Anthropic)
 - ⚡ **Faster responses** - Process data locally without multiple API calls
 - 💰 **Lower costs** - Reduced token consumption
@@ -47,13 +48,13 @@ Instead of fetching all messages and filtering in the LLM context:
 const messages = await m365.mail.list({ top: 1000 });
 
 // Code execution approach (sends only summary = ~50 bytes)
-const messages = await m365.mail.list({ filter: "isRead eq false" });
-const highPriority = messages.value.filter(m => m.importance === "high");
+const messages = await m365.mail.list({ filter: 'isRead eq false' });
+const highPriority = messages.value.filter((m) => m.importance === 'high');
 
 return {
   count: highPriority.length,
-  senders: [...new Set(highPriority.map(m => m.from.emailAddress.address))],
-  subjects: highPriority.map(m => m.subject)
+  senders: [...new Set(highPriority.map((m) => m.from.emailAddress.address))],
+  subjects: highPriority.map((m) => m.subject),
 };
 ```
 
@@ -66,13 +67,13 @@ const now = new Date();
 const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
 const events = await m365.calendar.list({
-  filter: `start/dateTime ge '${now.toISOString()}' and start/dateTime le '${nextWeek.toISOString()}'`
+  filter: `start/dateTime ge '${now.toISOString()}' and start/dateTime le '${nextWeek.toISOString()}'`,
 });
 
 const analysis = {
   totalMeetings: events.value.length,
   byDay: {},
-  topAttendees: {}
+  topAttendees: {},
 };
 
 for (const event of events.value) {
@@ -100,10 +101,10 @@ const summary = {
   byStatus: {
     notStarted: 0,
     inProgress: 0,
-    completed: 0
+    completed: 0,
   },
   overdue: [],
-  dueThisWeek: []
+  dueThisWeek: [],
 };
 
 const now = new Date();
@@ -120,7 +121,7 @@ for (const task of tasks.value) {
     summary.overdue.push({
       title: task.title,
       dueDate: task.dueDateTime,
-      planId: task.planId
+      planId: task.planId,
     });
   }
 
@@ -130,7 +131,7 @@ for (const task of tasks.value) {
     if (dueDate >= now && dueDate <= weekFromNow) {
       summary.dueThisWeek.push({
         title: task.title,
-        dueDate: task.dueDateTime
+        dueDate: task.dueDateTime,
       });
     }
   }
@@ -145,12 +146,12 @@ return summary;
 // 1. Find unread important emails
 const unreadMessages = await m365.mail.list({
   filter: "isRead eq false and importance eq 'high'",
-  top: 10
+  top: 10,
 });
 
 // 2. Create tasks for each email
 const todoLists = await m365.todo.listLists();
-const defaultList = todoLists.value.find(l => l.wellknownListName === 'defaultList');
+const defaultList = todoLists.value.find((l) => l.wellknownListName === 'defaultList');
 
 const createdTasks = [];
 for (const msg of unreadMessages.value) {
@@ -158,9 +159,9 @@ for (const msg of unreadMessages.value) {
     title: `Follow up: ${msg.subject}`,
     body: {
       content: `From: ${msg.from.emailAddress.address}`,
-      contentType: 'text'
+      contentType: 'text',
     },
-    importance: 'high'
+    importance: 'high',
   });
   createdTasks.push(task.title);
 }
@@ -173,7 +174,7 @@ for (const msg of unreadMessages.value) {
 
 return {
   processedEmails: unreadMessages.value.length,
-  createdTasks: createdTasks
+  createdTasks: createdTasks,
 };
 ```
 
@@ -341,12 +342,12 @@ m365.todo.updateTask(
 ```javascript
 // Good: Filter on server
 const messages = await m365.mail.list({
-  filter: "isRead eq false and importance eq 'high'"
+  filter: "isRead eq false and importance eq 'high'",
 });
 
 // Bad: Fetch all, filter locally (wastes bandwidth)
 const all = await m365.mail.list({ top: 1000 });
-const filtered = all.value.filter(m => !m.isRead && m.importance === 'high');
+const filtered = all.value.filter((m) => !m.isRead && m.importance === 'high');
 ```
 
 ### 2. Select Only Needed Fields
@@ -354,7 +355,7 @@ const filtered = all.value.filter(m => !m.isRead && m.importance === 'high');
 ```javascript
 // Good: Minimal data transfer
 const messages = await m365.mail.list({
-  select: "id,subject,from,receivedDateTime"
+  select: 'id,subject,from,receivedDateTime',
 });
 
 // Bad: Fetches all fields including large body
@@ -367,7 +368,7 @@ const messages = await m365.mail.list();
 // Good: Return summary (50 bytes)
 return {
   total: messages.length,
-  unreadCount: messages.filter(m => !m.isRead).length
+  unreadCount: messages.filter((m) => !m.isRead).length,
 };
 
 // Bad: Return full array (500KB)
@@ -405,6 +406,7 @@ Error: Unexpected token
 ### From Individual Tool Calls
 
 **Before:**
+
 ```
 1. Call list-mail-messages with filter
 2. Parse results in LLM context
@@ -412,6 +414,7 @@ Error: Unexpected token
 ```
 
 **After:**
+
 ```javascript
 const messages = await m365.mail.list({ filter: "..." });
 for (const msg of messages.value) {
@@ -422,11 +425,11 @@ return { processed: messages.value.length };
 
 ### Token Savings
 
-| Operation | Before (Tokens) | After (Tokens) | Savings |
-|-----------|----------------|----------------|---------|
-| List 100 emails | ~50,000 | ~500 | 99% |
-| Calendar analysis | ~30,000 | ~200 | 99.3% |
-| Task summary | ~20,000 | ~300 | 98.5% |
+| Operation         | Before (Tokens) | After (Tokens) | Savings |
+| ----------------- | --------------- | -------------- | ------- |
+| List 100 emails   | ~50,000         | ~500           | 99%     |
+| Calendar analysis | ~30,000         | ~200           | 99.3%   |
+| Task summary      | ~20,000         | ~300           | 98.5%   |
 
 ## Future Enhancements
 
@@ -440,6 +443,7 @@ return { processed: messages.value.length };
 ---
 
 **Related Documentation:**
+
 - [Anthropic MCP Code Execution Article](https://www.anthropic.com/engineering/code-execution-with-mcp)
 - [Microsoft Graph API Documentation](https://docs.microsoft.com/en-us/graph/overview)
 - [Project Architecture Guide](./CLAUDE.md)

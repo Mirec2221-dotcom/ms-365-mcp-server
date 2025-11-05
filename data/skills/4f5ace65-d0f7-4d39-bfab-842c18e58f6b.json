@@ -1,0 +1,13 @@
+{
+  "name": "dailyProductivitySummary",
+  "description": "Combined summary of emails, meetings, and tasks for today",
+  "category": "general",
+  "code": "\n      const today = new Date();\n      today.setHours(0, 0, 0, 0);\n      const todayISO = today.toISOString();\n      const tomorrow = new Date(today);\n      tomorrow.setDate(tomorrow.getDate() + 1);\n      const tomorrowISO = tomorrow.toISOString();\n\n      // Get emails\n      const emails = await m365.mail.list({\n        filter: `receivedDateTime ge ${todayISO} and receivedDateTime lt ${tomorrowISO}`,\n        select: 'isRead,importance',\n        top: 100\n      });\n\n      // Get meetings\n      const meetings = await m365.calendar.list({\n        filter: `start/dateTime ge '${todayISO}' and start/dateTime lt '${tomorrowISO}'`,\n        select: 'start,end'\n      });\n\n      // Calculate meeting duration\n      let meetingMinutes = 0;\n      for (const event of meetings.value) {\n        const start = new Date(event.start.dateTime);\n        const end = new Date(event.end.dateTime);\n        meetingMinutes += (end - start) / (1000 * 60);\n      }\n\n      const emailStats = {\n        total: emails.value.length,\n        unread: emails.value.filter(e => !e.isRead).length,\n        urgent: emails.value.filter(e => e.importance === 'high').length\n      };\n\n      return {\n        date: today.toISOString().split('T')[0],\n        emails: emailStats,\n        meetings: {\n          count: meetings.value.length,\n          totalMinutes: Math.round(meetingMinutes)\n        },\n        summary: `${emailStats.total} emails (${emailStats.unread} unread, ${emailStats.urgent} urgent), ${meetings.value.length} meetings (${Math.round(meetingMinutes / 60)}h ${Math.round(meetingMinutes % 60)}m)`\n      };\n    ",
+  "tags": ["productivity", "summary", "daily", "report", "overview"],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "4f5ace65-d0f7-4d39-bfab-842c18e58f6b",
+  "createdAt": "2025-11-05T09:49:31.878Z",
+  "usageCount": 0,
+  "updatedAt": "2025-11-05T09:49:31.878Z"
+}

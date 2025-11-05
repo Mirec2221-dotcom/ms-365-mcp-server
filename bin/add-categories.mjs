@@ -16,12 +16,20 @@ const endpoints = JSON.parse(fs.readFileSync(endpointsFile, 'utf8'));
 // Define category mapping based on tool name patterns
 function determineCategory(toolName, pathPattern) {
   // Mail & Messages
-  if (toolName.includes('mail') || toolName.includes('message') || toolName.includes('attachment')) {
+  if (
+    toolName.includes('mail') ||
+    toolName.includes('message') ||
+    toolName.includes('attachment')
+  ) {
     return 'mail';
   }
 
   // Calendar & Events
-  if (toolName.includes('calendar') || toolName.includes('event') || toolName.includes('meeting-time')) {
+  if (
+    toolName.includes('calendar') ||
+    toolName.includes('event') ||
+    toolName.includes('meeting-time')
+  ) {
     return 'calendar';
   }
 
@@ -41,7 +49,11 @@ function determineCategory(toolName, pathPattern) {
   }
 
   // Files & Drives (OneDrive/SharePoint files)
-  if (toolName.includes('onedrive') || toolName.includes('drive') || toolName.includes('folder') && !toolName.includes('mail')) {
+  if (
+    toolName.includes('onedrive') ||
+    toolName.includes('drive') ||
+    (toolName.includes('folder') && !toolName.includes('mail'))
+  ) {
     return 'files';
   }
 

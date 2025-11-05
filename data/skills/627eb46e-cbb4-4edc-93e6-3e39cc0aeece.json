@@ -1,0 +1,13 @@
+{
+  "name": "analyzeTodaysMeetings",
+  "description": "Analyze today's calendar meetings including duration, attendee count, and meeting types",
+  "category": "calendar",
+  "code": "\n      const today = new Date();\n      today.setHours(0, 0, 0, 0);\n      const todayISO = today.toISOString();\n\n      const tomorrow = new Date(today);\n      tomorrow.setDate(tomorrow.getDate() + 1);\n      const tomorrowISO = tomorrow.toISOString();\n\n      const events = await m365.calendar.list({\n        filter: `start/dateTime ge '${todayISO}' and start/dateTime lt '${tomorrowISO}'`,\n        select: 'subject,start,end,attendees,isOnlineMeeting,organizer'\n      });\n\n      let totalDuration = 0;\n      let onlineMeetings = 0;\n      let totalAttendees = 0;\n      const meetings = [];\n\n      for (const event of events.value) {\n        const start = new Date(event.start.dateTime);\n        const end = new Date(event.end.dateTime);\n        const duration = (end - start) / (1000 * 60); // minutes\n\n        totalDuration += duration;\n        if (event.isOnlineMeeting) onlineMeetings++;\n        totalAttendees += (event.attendees?.length || 0);\n\n        meetings.push({\n          subject: event.subject,\n          start: event.start.dateTime,\n          duration: Math.round(duration),\n          attendeeCount: event.attendees?.length || 0,\n          isOnline: event.isOnlineMeeting\n        });\n      }\n\n      return {\n        date: today.toISOString().split('T')[0],\n        totalMeetings: events.value.length,\n        totalDuration: Math.round(totalDuration),\n        averageDuration: events.value.length > 0 ? Math.round(totalDuration / events.value.length) : 0,\n        onlineMeetings,\n        totalAttendees,\n        meetings: meetings.sort((a, b) => a.start.localeCompare(b.start))\n      };\n    ",
+  "tags": ["calendar", "meetings", "analysis", "daily"],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "627eb46e-cbb4-4edc-93e6-3e39cc0aeece",
+  "createdAt": "2025-11-05T09:49:31.869Z",
+  "usageCount": 0,
+  "updatedAt": "2025-11-05T09:49:31.869Z"
+}

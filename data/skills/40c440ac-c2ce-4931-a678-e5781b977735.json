@@ -1,0 +1,13 @@
+{
+  "name": "getUnreadUrgentEmails",
+  "description": "Get all unread high-priority emails with sender, subject, and received time",
+  "category": "mail",
+  "code": "\n      const messages = await m365.mail.list({\n        filter: \"isRead eq false and importance eq 'high'\",\n        select: 'from,subject,receivedDateTime,bodyPreview',\n        orderby: ['receivedDateTime desc'],\n        top: 50\n      });\n\n      return messages.value.map(m => ({\n        from: m.from.emailAddress.address,\n        subject: m.subject,\n        preview: m.bodyPreview?.substring(0, 100),\n        received: m.receivedDateTime\n      }));\n    ",
+  "tags": ["email", "urgent", "unread", "filter"],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "40c440ac-c2ce-4931-a678-e5781b977735",
+  "createdAt": "2025-11-05T09:49:31.865Z",
+  "usageCount": 0,
+  "updatedAt": "2025-11-05T09:49:31.865Z"
+}

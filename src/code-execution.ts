@@ -204,10 +204,9 @@ function createM365Client(graphClient: GraphClient): M365Client {
       },
 
       async getListItems(siteId: string, listId: string) {
-        const response = await graphClient.graphRequest(
-          `/sites/${siteId}/lists/${listId}/items`,
-          { method: 'GET' }
-        );
+        const response = await graphClient.graphRequest(`/sites/${siteId}/lists/${listId}/items`, {
+          method: 'GET',
+        });
         return JSON.parse(response.content[0].text);
       },
     },
@@ -348,9 +347,7 @@ export async function executeM365Code(
     // Wait for the result with timeout
     const result = await Promise.race([
       resultPromise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Execution timeout')), timeout)
-      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Execution timeout')), timeout)),
     ]);
 
     const executionTime = Date.now() - startTime;

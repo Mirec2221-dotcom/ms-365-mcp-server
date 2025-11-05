@@ -63,31 +63,43 @@ describe('Read-Only Mode', () => {
     vi.resetAllMocks();
   });
 
-  it('should respect --read-only flag from CLI', () => {
+  it('should respect --read-only flag from CLI', async () => {
     vi.mocked(parseArgs).mockReturnValue({ readOnly: true } as ReturnType<typeof parseArgs>);
 
     const options = parseArgs();
     expect(options.readOnly).toBe(true);
 
-    registerGraphTools(mockServer, {} as GraphClient, options.readOnly);
+    await registerGraphTools(mockServer, {} as GraphClient, options.readOnly);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(1);
+    // Now includes: 1 GET endpoint + 3 meta tools (categories, code execution) + 7 skill tools = 11 total
+    expect(mockServer.tool).toHaveBeenCalledTimes(11);
 
     const toolCalls = mockServer.tool.mock.calls.map((call: unknown[]) => call[0]);
     expect(toolCalls).toContain('list-mail-messages');
     expect(toolCalls).not.toContain('send-mail');
     expect(toolCalls).not.toContain('delete-mail-message');
+
+    // Verify meta tools are registered
+    expect(toolCalls).toContain('list-m365-categories');
+    expect(toolCalls).toContain('list-category-tools');
+    expect(toolCalls).toContain('execute-m365-code');
+
+    // Verify skill tools are registered
+    expect(toolCalls).toContain('create-m365-skill');
+    expect(toolCalls).toContain('list-m365-skills');
+    expect(toolCalls).toContain('execute-m365-skill');
   });
 
-  it('should register all endpoints when not in read-only mode', () => {
+  it('should register all endpoints when not in read-only mode', async () => {
     vi.mocked(parseArgs).mockReturnValue({ readOnly: false } as ReturnType<typeof parseArgs>);
 
     const options = parseArgs();
     expect(options.readOnly).toBe(false);
 
-    registerGraphTools(mockServer, {} as GraphClient, options.readOnly);
+    await registerGraphTools(mockServer, {} as GraphClient, options.readOnly);
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(3);
+    // Now includes: 3 endpoints + 3 meta tools + 7 skill tools = 13 total
+    expect(mockServer.tool).toHaveBeenCalledTimes(13);
 
     const toolCalls = mockServer.tool.mock.calls.map((call: unknown[]) => call[0]);
     expect(toolCalls).toContain('list-mail-messages');

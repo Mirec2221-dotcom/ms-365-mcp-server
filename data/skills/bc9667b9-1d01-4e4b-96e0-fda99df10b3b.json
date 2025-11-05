@@ -1,0 +1,13 @@
+{
+  "name": "getOverdueTasks",
+  "description": "Get all overdue Planner tasks across all plans",
+  "category": "planner",
+  "code": "\n      const plans = await m365.planner.listUserPlans();\n      const overdueTasks = [];\n      const today = new Date().toISOString();\n\n      for (const plan of plans.value) {\n        const tasks = await m365.planner.listPlanTasks({ planId: plan.id });\n\n        for (const task of tasks.value) {\n          if (task.dueDateTime && task.dueDateTime < today && task.percentComplete < 100) {\n            const daysOverdue = Math.floor(\n              (new Date() - new Date(task.dueDateTime)) / (1000 * 60 * 60 * 24)\n            );\n\n            overdueTasks.push({\n              planName: plan.title,\n              taskTitle: task.title,\n              dueDate: task.dueDateTime.split('T')[0],\n              daysOverdue,\n              priority: task.priority,\n              percentComplete: task.percentComplete\n            });\n          }\n        }\n      }\n\n      return overdueTasks.sort((a, b) => b.daysOverdue - a.daysOverdue);\n    ",
+  "tags": ["planner", "tasks", "overdue", "report"],
+  "isPublic": true,
+  "isBuiltin": true,
+  "id": "bc9667b9-1d01-4e4b-96e0-fda99df10b3b",
+  "createdAt": "2025-11-05T09:49:31.872Z",
+  "usageCount": 0,
+  "updatedAt": "2025-11-05T09:49:31.872Z"
+}

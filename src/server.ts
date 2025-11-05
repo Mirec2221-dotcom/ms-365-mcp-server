@@ -54,7 +54,7 @@ class MicrosoftGraphServer {
     if (shouldRegisterAuthTools) {
       registerAuthTools(this.server, this.authManager);
     }
-    registerGraphTools(
+    await registerGraphTools(
       this.server,
       this.graphClient,
       this.options.readOnly,

@@ -72,22 +72,24 @@ function fixDynamicObjectSchemas(schemas) {
       properties: {
         '@odata.type': {
           type: 'string',
-          default: '#microsoft.graph.plannerAssignment'
+          default: '#microsoft.graph.plannerAssignment',
         },
         orderHint: {
           type: 'string',
-          description: 'Hint used to order assignees in the task'
-        }
-      }
+          description: 'Hint used to order assignees in the task',
+        },
+      },
     };
   }
 
   // Fix plannerAppliedCategories - similar pattern for category assignments
   if (schemas['microsoft.graph.plannerAppliedCategories']) {
-    console.log('🔧 Fixing microsoft.graph.plannerAppliedCategories to support dynamic category keys');
+    console.log(
+      '🔧 Fixing microsoft.graph.plannerAppliedCategories to support dynamic category keys'
+    );
     schemas['microsoft.graph.plannerAppliedCategories'].additionalProperties = {
       type: 'boolean',
-      description: 'Whether the category is applied to the task'
+      description: 'Whether the category is applied to the task',
     };
   }
 }

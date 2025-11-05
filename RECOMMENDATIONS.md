@@ -10,13 +10,15 @@ Fetch(https://www.anthropic.com/engineering/code-execution-with-mcp)
 Problém: Náš server momentálne exponuje všetkých ~80+ toolov naraz. To znamená veľký context pre AI.
 
 Riešenie z článku: Namiesto toho implementovať:
+
 - list_available_modules() - zobrazí kategórie (Mail, Calendar, Teams, SharePoint, Planner...)
 - get_module_operations(module_name) - zobrazí operácie pre danú kategóriu
 - Lazy loading - nástroje sa načítajú až keď sú potrebné
 
 Príklad:
 // Namiesto 80+ toolov hneď, začni s:
-- list-m365-categories  → vracia: ["mail", "calendar", "teams", "sharepoint"]
+
+- list-m365-categories → vracia: ["mail", "calendar", "teams", "sharepoint"]
 - get-category-tools(category: "mail") → vracia: [list-mail, send-mail, ...]
 
 2. Code-Based Interface (Kódové API)
@@ -72,8 +74,8 @@ Riešenie z článku: Tokenizovať citlivé dáta pred poslaním do LLM:
 
 // Server tokenizuje:
 {
-from: "user_abc123",  // namiesto "john.doe@company.com"
-body: "Meeting with client_xyz789"  // namiesto "Meeting with Microsoft"
+from: "user_abc123", // namiesto "john.doe@company.com"
+body: "Meeting with client_xyz789" // namiesto "Meeting with Microsoft"
 }
 
 // Lookup table zostane v serveri
@@ -101,48 +103,84 @@ receivedAt: m.receivedDateTime
 
 ✅ Fáza 1: Kategorizácia Toolov (IMPLEMENTED)
 
-+ ✅ Pridať meta-tools:
-+ ✅ - list-m365-categories
-+ ✅ - list-category-tools
-+ ⏸️ - get-tool-schema (future enhancement)
+- ✅ Pridať meta-tools:
+- ✅ - list-m365-categories
+- ✅ - list-category-tools
+- ⏸️ - get-tool-schema (future enhancement)
 
 Status: Implemented in commit 8a304c1
+
 - 14 categories created (mail, sharepoint, calendar, files, etc.)
 - 98 tools categorized
 - Progressive tool discovery enabled
 
 ✅ Fáza 2: Code Execution Sandbox (IMPLEMENTED)
 
-+ ✅ Implementovať izolovaný Node.js sandbox
-+ ✅ Vytvoriť m365 client SDK pre code execution
-+ ✅ Bezpečnostné obmedzenia (timeout, memory limit)
-+ ✅ Pridať execute-m365-code tool
-+ ✅ Umožniť lokálne filtrovanie pred vrátením
+- ✅ Implementovať izolovaný Node.js sandbox
+- ✅ Vytvoriť m365 client SDK pre code execution
+- ✅ Bezpečnostné obmedzenia (timeout, memory limit)
+- ✅ Pridať execute-m365-code tool
+- ✅ Umožniť lokálne filtrovanie pred vrátením
 
 Status: Implemented in current commit
+
 - Sandboxed JavaScript execution with Node.js vm module
 - M365 client SDK with 7 service categories (mail, calendar, teams, files, sharepoint, planner, todo)
 - Security: timeout protection, context isolation, blocked dangerous globals
 - Comprehensive documentation in CODE_EXECUTION.md
 - Test suite with 98.7% token reduction verified
 
-⏸️ Fáza 3: Advanced Features (FUTURE)
+⚡ Fáza 3: Advanced Features (PARTIAL)
 
-+ Implementovať streaming pre veľké datasety
-+ TypeScript execution support
-+ Skill persistence (save reusable code)
-+ PII tokenization
-+ Rate limiting and quota management
+- ⏸️ Implementovať streaming pre veľké datasety
+- ⏸️ TypeScript execution support
+- ✅ Skill persistence (save reusable code)
+- ⏸️ PII tokenization
+- ⏸️ Rate limiting and quota management
+
+✅ Skill Persistence - IMPLEMENTED
+
+Status: Implemented in commit 52bf4c9
+
+- File-based JSON storage for reusable skills
+- 7 MCP tools for skill management: create, list, get, execute, update, delete, search
+- 6 pre-installed built-in skills (email summaries, meeting analysis, task management)
+- Code validation and security checks
+- Usage tracking and statistics
+- Category-based organization (mail, calendar, teams, files, sharepoint, planner, todo, general)
+- Parameter support for flexible skill inputs
+- Integration with code execution sandbox
+- Comprehensive documentation in SKILL_PERSISTENCE.md
+- Full test coverage in test/skills.test.ts
+
+Features:
+
+- Create custom skills with JavaScript code
+- Execute skills with parameters
+- Search and filter skills by category, tags, visibility
+- Track usage statistics for popular skills
+- Built-in skills library for common operations
+- Secure code validation blocking dangerous patterns
+
+Benefits:
+
+- Reusable code patterns across sessions
+- Reduced repetitive code writing
+- Library of team-shared skills
+- Automatic usage analytics
+- Token optimization through skill reuse
 
 ⚠️ Trade-offs
 
 Výhody:
+
 - ✅ Masívna redukcia tokenov (98.7% podľa článku)
 - ✅ Rýchlejšie responses
 - ✅ Nižšie náklady
 - ✅ Komplexnejšie operácie v jednom kroku
 
 Nevýhody:
+
 - ❌ Vyššia komplexita implementácie
 - ❌ Bezpečnostné riziká (treba sandbox)
 - ❌ Debugging je ťažší

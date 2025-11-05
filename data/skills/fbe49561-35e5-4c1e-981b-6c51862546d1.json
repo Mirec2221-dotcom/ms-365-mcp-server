@@ -1,0 +1,30 @@
+{
+  "name": "filterEmailsBySender",
+  "description": "Filter emails by sender address and return count and subjects",
+  "category": "mail",
+  "code": "\n// Filter emails by sender\nconst senderEmail = params.sender || '';\nconst maxResults = params.maxResults || 10;\n\nif (!senderEmail) {\n  throw new Error('Parameter \"sender\" is required');\n}\n\n// Get recent emails\nconst messages = await m365.mail.list({\n  top: 50,\n  orderby: ['receivedDateTime desc']\n});\n\n// Filter by sender\nconst filtered = messages.value.filter(msg => \n  msg.from?.emailAddress?.address?.toLowerCase().includes(senderEmail.toLowerCase())\n);\n\n// Take only maxResults\nconst results = filtered.slice(0, maxResults);\n\nreturn {\n  sender: senderEmail,\n  totalFound: filtered.length,\n  returned: results.length,\n  emails: results.map(m => ({\n    subject: m.subject,\n    from: m.from?.emailAddress?.address,\n    received: m.receivedDateTime,\n    isRead: m.isRead\n  }))\n};\n",
+  "parameters": {
+    "sender": {
+      "type": "string",
+      "description": "Email address or part of email address to filter by",
+      "required": true
+    },
+    "maxResults": {
+      "type": "number",
+      "description": "Maximum number of results to return (default: 10)",
+      "required": false,
+      "default": 10
+    }
+  },
+  "tags": [
+    "email",
+    "filter",
+    "sender",
+    "search"
+  ],
+  "isPublic": true,
+  "id": "fbe49561-35e5-4c1e-981b-6c51862546d1",
+  "createdAt": "2025-11-05T10:00:20.101Z",
+  "usageCount": 1,
+  "updatedAt": "2025-11-05T10:00:40.305Z"
+}
